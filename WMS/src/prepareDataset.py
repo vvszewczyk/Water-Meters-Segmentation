@@ -9,7 +9,7 @@ import torch
 import torchvision
 from torch.utils.data import DataLoader
 from dataset import WMSDataset
-from transforms import imageTransforms
+from transforms import valTransforms
 import matplotlib.pyplot as plt
 
 ############### DATA LOAD ###############
@@ -17,8 +17,8 @@ random.seed(42)
 
 # Source data directories
 datasetPath = os.path.dirname(os.path.abspath(__file__))
-sourceImageDir = os.path.join(datasetPath, '..', 'data', 'images')
-sourceMaskDir  = os.path.join(datasetPath, '..', 'data', 'masks')
+sourceImageDir = os.path.join(datasetPath, '..', 'data', 'training', 'images')
+sourceMaskDir  = os.path.join(datasetPath, '..', 'data', 'training', 'masks')
 
 # Get images and masks names
 imageFiles = sorted([f for f in os.listdir(sourceImageDir) if f.endswith('.jpg')])
@@ -32,7 +32,7 @@ valImgs, testImgs = train_test_split(tempImgs, test_size=0.5, random_state=42)
 splits = {'train': trainImgs, 'val': valImgs, 'test': testImgs}
 
 # Folders creation
-baseDataDir = os.path.join(datasetPath, '..', 'data')
+baseDataDir = os.path.join(datasetPath, '..', 'data', 'training', 'temp')
 for split, files in splits.items():
     for subfolder in ['images', 'masks']:
         os.makedirs(os.path.join(baseDataDir, split, subfolder), exist_ok=True)
@@ -58,9 +58,9 @@ valImagePaths = [os.path.join(baseDataDir, 'val', 'images', f)
 valMaskPaths  = [os.path.join(baseDataDir, 'val', 'masks', f)
                    for f in os.listdir(os.path.join(baseDataDir, 'val', 'masks')) if f.endswith('.jpg')]
 
-trainDataset = WMSDataset(trainImagePaths, trainMaskPaths, imageTransforms)
-testDataset = WMSDataset(testImagePaths, testMaskPaths, imageTransforms)
-valDataset  = WMSDataset(valImagePaths,  valMaskPaths,   imageTransforms)
+trainDataset = WMSDataset(trainImagePaths, trainMaskPaths, valTransforms)
+testDataset = WMSDataset(testImagePaths, testMaskPaths, valTransforms)
+valDataset  = WMSDataset(valImagePaths,  valMaskPaths,   valTransforms)
 
 print(f"trainDataset length(train part): {len(trainDataset)}")
 print(f"testDataset length(train part): {len(testDataset)}")
@@ -73,18 +73,20 @@ images, masks = next(iter(dataLoader))
 def count_pixel_balance(mask_paths, dataset_name):
     counts = defaultdict(int)
     for mask_path in mask_paths:
-        mask = cv2.imread(mask_path, 0)  # Wczytujemy maskę jako grayscale
-        if mask is None:
+        mask_img = cv2.imread(mask_path, 0)  # Load mask as grayscale
+        if mask_img is None:
             print(f"Warning: Could not load {mask_path}")
             continue
-        unique, cnts = np.unique(mask, return_counts=True)
+        # Apply same thresholding as in WMSDataset to avoid JPEG compression artifacts
+        mask_img = (mask_img >= 127).astype(np.uint8)
+        unique, cnts = np.unique(mask_img, return_counts=True)
         for cls, count in zip(unique, cnts):
             counts[cls] += count
     print(f"\nPixel distribution for the set {dataset_name}:")
     for cls, count in sorted(counts.items()):
         print(f"Class {cls}: {count} pixels")
 
-    # Wykres słupkowy dla wizualizacji
+    # Bar chart for visualization
     classes = sorted(counts.keys())
     values = [counts[c] for c in classes]
     plt.figure(figsize=(8, 6))
@@ -94,45 +96,45 @@ def count_pixel_balance(mask_paths, dataset_name):
     plt.title(f"Pixel distribution for the set: {dataset_name}")
     plt.show()
 
-# Count balances
-count_pixel_balance(trainMaskPaths, "Train")
-count_pixel_balance(valMaskPaths, "Validation")
-count_pixel_balance(testMaskPaths, "Test")
-
 ############### DEVICE CONFIGURATION ###############
 # determine the device to be used for training and evaluation
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # determine if we will be pinning memory during data loading
 PIN_MEMORY = True if DEVICE == "cuda" else False
 
+############### VISUALIZATION (only when run directly) ###############
+if __name__ == '__main__':
+    # Count balances
+    count_pixel_balance(trainMaskPaths, "Train")
+    count_pixel_balance(valMaskPaths, "Validation")
+    count_pixel_balance(testMaskPaths, "Test")
 
-############### PLOTS ###############
-import matplotlib.pyplot as plt
+    # Dataset split pie chart
+    sizes = [len(trainImgs), len(valImgs), len(testImgs)]
+    labels = ['Train', 'Validation', 'Test']
 
-sizes = [len(trainImgs), len(valImgs), len(testImgs)]
-labels = ['Train', 'Validation', 'Test']
+    plt.figure(figsize=(6, 6))
+    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140,
+            pctdistance=0.85, labeldistance=1.1)
+    plt.title('Dataset Split', pad=20)
+    plt.axis('equal')  # Equal aspect ratio ensures pie is drawn as a circle.
+    plt.show()
 
-plt.figure(figsize=(6, 6))
-plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
-plt.title('Podział zbioru danych')
-plt.axis('equal')  # Equal aspect ratio ensures pie is drawn as a circle.
-plt.show()
+    # Sample images grid
+    fig, axs = plt.subplots(5, 2, figsize=(10, 20))
+    for i in range(5):
+        image = images[i].permute(1, 2, 0).numpy()
+        mask = masks[i].squeeze().numpy()
+        axs[i, 0].imshow(image)
+        axs[i, 0].set_title("Image")
+        axs[i, 1].imshow(mask, cmap='gray')
+        axs[i, 1].set_title("Mask")
+        axs[i, 0].axis("off")
+        axs[i, 1].axis("off")
+    plt.show()
 
-fig, axs = plt.subplots(5, 2, figsize=(10, 20))
-for i in range(5):
-    image = images[i].permute(1, 2, 0).numpy()
-    mask = masks[i].squeeze().numpy()
-    axs[i, 0].imshow(image)
-    axs[i, 0].set_title("Obraz")
-    axs[i, 1].imshow(mask, cmap='gray')
-    axs[i, 1].set_title("Maska")
-    axs[i, 0].axis("off")
-    axs[i, 1].axis("off")
-
-
-print(f"\nPyTorch version: {torch.__version__}")
-print(f"Torchvision version: {torchvision.__version__}")
-print(f"GPU available: {torch.cuda.is_available()}")
-print(f"cuda version: {torch.version.cuda}")
-
-plt.show()
+    # PyTorch info
+    print(f"\nPyTorch version: {torch.__version__}")
+    print(f"Torchvision version: {torchvision.__version__}")
+    print(f"GPU available: {torch.cuda.is_available()}")
+    print(f"cuda version: {torch.version.cuda}")
