@@ -1,0 +1,99 @@
+{
+  "verified_pairs": 1244,
+  "failed_pairs": 0,
+  "split_seed": 42,
+  "preprocessing": "WMSDataset(imageTransforms=valTransforms), no random augmentation",
+  "storage": "Source pairs in training/temp/{split}/{images,masks}; tensors processed on load",
+  "image_shape": [
+    3,
+    512,
+    512
+  ],
+  "mask_shape": [
+    1,
+    512,
+    512
+  ],
+  "dtype": "float32",
+  "image_range": [
+    0,
+    1
+  ],
+  "mask_values": [
+    0,
+    1
+  ],
+  "source_width_range": [
+    864,
+    2058
+  ],
+  "source_height_range": [
+    480,
+    2168
+  ],
+  "empty_masks": 0,
+  "byte_identical_image_groups": [],
+  "cross_split_byte_identical_groups": [],
+  "splits": {
+    "train": {
+      "pairs": 995,
+      "dataset_percent": 79.983922829582,
+      "foreground_pixels": 6013626,
+      "background_pixels": 254819654,
+      "foreground_percent": 2.3055439857981312,
+      "background_percent": 97.69445601420186,
+      "empty_masks": 0,
+      "foreground_percent_min": 0.337982177734375,
+      "foreground_percent_max": 9.084701538085938
+    },
+    "val": {
+      "pairs": 124,
+      "dataset_percent": 9.967845659163988,
+      "foreground_pixels": 747158,
+      "background_pixels": 31758698,
+      "foreground_percent": 2.2985335319272933,
+      "background_percent": 97.70146646807271,
+      "empty_masks": 0,
+      "foreground_percent_min": 0.281524658203125,
+      "foreground_percent_max": 15.0848388671875
+    },
+    "test": {
+      "pairs": 125,
+      "dataset_percent": 10.04823151125402,
+      "foreground_pixels": 775925,
+      "background_pixels": 31992075,
+      "foreground_percent": 2.3679351806640625,
+      "background_percent": 97.63206481933594,
+      "empty_masks": 0,
+      "foreground_percent_min": 0.527191162109375,
+      "foreground_percent_max": 7.3810577392578125
+    }
+  },
+  "examples": [
+    {
+      "split": "train",
+      "filename": "id_156_value_221_056.jpg"
+    },
+    {
+      "split": "val",
+      "filename": "id_511_value_399_701.jpg"
+    },
+    {
+      "split": "test",
+      "filename": "id_104_value_322_032.jpg"
+    }
+  ],
+  "versions": {
+    "torch": "2.14.1+cpu",
+    "torchvision": "0.29.1+cpu",
+    "numpy": "2.4.6",
+    "opencv": "5.0.0",
+    "sklearn": "1.9.1"
+  },
+  "source_code_sha256": {
+    "dataset.py": "e967a1ea29fc2f1e79f2c8ca86d18d009a5ee11c8ccead3edccbede705c57a1b",
+    "transforms.py": "4317530345cde88af297e83f56c78c57a05ac347b1c062a3a0a15bfa5b1a3dfd",
+    "prepareDataset.py": "93699f5bde31883163a1e7ba24a42754da6d5e7f40d81f5e3e9347aac03c850d",
+    "audit_dataset.py": "b809876f2997e0c30a93e4c18463c10a90f26b4d62a5514f6b476fa91102950d"
+  }
+}
